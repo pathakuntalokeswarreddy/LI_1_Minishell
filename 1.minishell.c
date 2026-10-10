@@ -107,7 +107,7 @@ void scan_input(char *prompt, char *input_string)
             char *shell = getenv("SHELL");
 
             if (shell != NULL)
-                printf("shell : %s\n", shell);
+                printf("%s\n", shell);
             
             continue;
         }
