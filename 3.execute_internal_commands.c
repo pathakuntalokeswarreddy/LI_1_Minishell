@@ -83,22 +83,30 @@ void background_process(void)
     kill(pid, SIGCONT);
         
     int status;
-    waitpid(pid, &status, WNOHANG);
-    if (WIFEXITED(status))
+    pid_t ret = waitpid(pid, &status, WNOHANG);
+    if (ret == 0)
     {
-        head->status = DONE;
-        printf("[%d]+ Done %s\n", pid, head->process_name);
-        exit_status = WEXITSTATUS(status);
-    }
-    else if (WIFSIGNALED(status))
-    {
+        // Child is still running.
         head->status = RUNNING;
-        exit_status = 128 + WTERMSIG(status);
     }
-    else if (WIFSTOPPED(status))
+    else if (ret == pid)
     {
-        insert_first(process_name, pid);
-        exit_status = 128 + WSTOPSIG(status);
+        // A child status change was reported.
+        if (WIFEXITED(status))
+        {
+            head->status = DONE;
+            printf("[%d]+ Done %s\n", pid, head->process_name);
+            exit_status = WEXITSTATUS(status);
+        }
+        else if (WIFSIGNALED(status))
+        {
+            head->status = DONE;
+            exit_status = 128 + WTERMSIG(status);
+        }
+    }
+    else if (ret == -1)
+    {
+        perror("waitpid");
     }
     child_pid = 0;
 }
